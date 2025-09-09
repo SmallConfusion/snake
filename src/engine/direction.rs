@@ -1,4 +1,5 @@
 use rocket::serde::Serialize;
+use serde::ser::SerializeStruct;
 
 use super::Vector;
 
@@ -11,6 +12,16 @@ pub enum Direction {
 }
 
 impl Direction {
+    pub fn from_vector(vector: &Vector) -> Option<Self> {
+        match vector {
+            Vector { x: 0, y: 1 } => Some(Self::Up),
+            Vector { x: 1, y: 0 } => Some(Self::Right),
+            Vector { x: 0, y: -1 } => Some(Self::Down),
+            Vector { x: -1, y: 0 } => Some(Self::Left),
+            _ => None,
+        }
+    }
+
     pub fn get_str(&self) -> &'static str {
         match self {
             Direction::Up => "up",
@@ -22,9 +33,9 @@ impl Direction {
 
     pub fn get_vector(&self) -> Vector {
         match self {
-            Direction::Up => Vector::new(0, -1),
+            Direction::Up => Vector::new(0, 1),
             Direction::Right => Vector::new(1, 0),
-            Direction::Down => Vector::new(0, 1),
+            Direction::Down => Vector::new(0, -1),
             Direction::Left => Vector::new(-1, 0),
         }
     }
@@ -35,6 +46,8 @@ impl Serialize for Direction {
     where
         S: serde::Serializer,
     {
-        serializer.serialize_str(self.get_str())
+        let mut s = serializer.serialize_struct("Move", 1).unwrap();
+        s.serialize_field("move", self.get_str()).unwrap();
+        s.end()
     }
 }

@@ -1,4 +1,5 @@
 use core::f32;
+use std::time;
 
 use crate::api_types::GameState;
 pub use board::{Board, Snake};
@@ -11,20 +12,36 @@ mod direction;
 mod vector;
 
 pub fn get_move(game_state: &GameState) -> Direction {
+    let start = time::Instant::now();
+
     info!("Requested move");
 
     let board = Board::from_game_state(game_state);
 
-    let decision = evaluate(&board, 5);
+    let max_time = start + time::Duration::from_millis(400);
 
-    info!("Decided on move {0} with eval {1}", decision.1, decision.0);
+    let mut i = 0;
+
+    let mut decision = evaluate(&board, i, max_time).unwrap_or((0.0, Direction::Up));
+
+    loop {
+        i += 1;
+
+        if let Some(found) = evaluate(&board, i, max_time) {
+            decision = found;
+        } else {
+            break;
+        }
+    }
+
+    info!("{} depth: {}", decision.1, i - 1);
 
     return decision.1;
 }
 
-fn evaluate(board: &Board, depth: i32) -> (f32, Direction) {
+fn evaluate(board: &Board, depth: i32, time_limit: time::Instant) -> Option<(f32, Direction)> {
     if let Some(e) = override_evaluate(board) {
-        return (e, Direction::Up);
+        return Some((e, Direction::Up));
     }
 
     let mut enemy_moves: Vec<Vec<Direction>> = vec![];
@@ -39,10 +56,14 @@ fn evaluate(board: &Board, depth: i32) -> (f32, Direction) {
 
     let mut most = (-f32::INFINITY, Direction::Up);
 
-    for dir in Direction::iter().filter(|d| d != &player_back) {
+    'dir: for dir in Direction::iter().filter(|d| d != &player_back) {
         let mut least = f32::INFINITY;
 
         for i in 0..3_u32.pow(enemy_moves.len() as u32) {
+            if time::Instant::now() > time_limit {
+                return None;
+            }
+
             let mut enemy_move = vec![];
 
             for j in 0..enemy_moves.len() {
@@ -60,8 +81,16 @@ fn evaluate(board: &Board, depth: i32) -> (f32, Direction) {
             let eval = if depth == 0 {
                 base_evaluate(&next_board)
             } else {
-                evaluate(&next_board, depth - 1).0 + base_evaluate(&next_board)
+                if let Some(found) = evaluate(&next_board, depth - 1, time_limit) {
+                    found.0 + base_evaluate(&next_board)
+                } else {
+                    return None;
+                }
             };
+
+            if eval < most.0 {
+                continue 'dir;
+            }
 
             if eval < least {
                 least = eval;
@@ -73,7 +102,7 @@ fn evaluate(board: &Board, depth: i32) -> (f32, Direction) {
         }
     }
 
-    return most;
+    return Some(most);
 }
 
 fn get_snake_backwards(snake: &Snake) -> Direction {

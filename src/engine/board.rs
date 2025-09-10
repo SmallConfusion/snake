@@ -1,4 +1,4 @@
-use log::{trace, warn};
+use log::{error, warn};
 
 use super::{Direction, Vector};
 use std::collections::VecDeque;

@@ -9,8 +9,8 @@ use serde_json::{Value, json};
 
 use crate::api_types::GameState;
 
-mod api_types;
-mod engine;
+pub mod api_types;
+pub mod engine;
 
 #[get("/")]
 fn handle_index() -> Json<Value> {

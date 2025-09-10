@@ -4,6 +4,7 @@ use std::time;
 use crate::api_types::GameState;
 pub use board::{Board, Snake};
 pub use direction::Direction;
+use log::info;
 use strum::IntoEnumIterator;
 pub use vector::Vector;
 
@@ -39,7 +40,7 @@ pub fn get_move(game_state: &GameState) -> Direction {
     return decision.1;
 }
 
-fn evaluate(board: &Board, depth: i32, time_limit: time::Instant) -> Option<(f32, Direction)> {
+pub fn evaluate(board: &Board, depth: i32, time_limit: time::Instant) -> Option<(f32, Direction)> {
     if let Some(e) = override_evaluate(board) {
         return Some((e, Direction::Up));
     }

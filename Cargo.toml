@@ -3,6 +3,21 @@ name = "snake"
 version = "1.0.0"
 edition = "2024"
 
+[profile.release]
+codegen-units = 1
+lto="fat"
+
+[dev-dependencies]
+criterion = "0.7"
+
+[[bench]]
+name = "fast"
+harness = false
+
+[[bench]]
+name = "medium"
+harness = false
+
 [dependencies]
 rocket = { version = "0.5.0", features = ["json"] }
 serde = { version = "1.0.117", features = ["derive"] }
